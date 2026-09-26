@@ -1,0 +1,70 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Студент" as student
+actor "Преподаватель" as prepod
+actor "Администратор" as admin
+
+
+package "Система" {
+    usecase "Вход в систему" as UC_Login
+    usecase "Регистрация" as UC_Register
+    usecase "Посмотреть список дисциплин" as Check_list_of_disciplines
+    usecase "Посмотреть список группы" as Check_list_of_group
+    usecase "Узнать оценки по определённой дисциплине" as Check_marks
+    usecase "Узнать ФИО преподавателя" as Check_prepod_name
+    usecase "Узнать средний балл" as Check_avg_mark
+    usecase "Выбрать группу" as Choose_group
+    usecase "Выбрать дисциплину" as Choose_discipline
+    usecase "Выбрать студента" as Choose_student
+    usecase "Изменить оценки" as Change_marks
+    usecase "Добавить оценку" as Add_mark
+    usecase "Посмотреть список студентов" as Check_student_list
+    usecase "Добавить студента в группу" as Add_student_to_list
+    usecase "Посмотреть список преподавателей" as Check_prepod_list
+    usecase "Выбрать преподавателя" as Choose_prepod
+    usecase "Изменить дисциплину" as Change_discipline
+    usecase "Снять с дисциплины" as Remove_discipline
+    usecase "Назначить дисциплину" as Add_discipline
+    usecase "Изменить группы" as Change_groups
+    usecase "Создать группу" as Add_group
+    usecase "Удалить группу" as Remove_group
+    usecase "Изменить преподавателей" as Change_prepods
+    usecase "Добавить преподавателя" as Add_prepod
+    usecase "Удалить преподавателя" as Remove_prepod
+}
+
+student -- UC_Login
+student -- UC_Register
+student -- Check_list_of_disciplines
+student -- Check_list_of_group
+Check_list_of_disciplines -- Check_marks
+Check_marks ..> Check_prepod_name : <<include>>
+Check_marks ..> Check_avg_mark : <<include>>
+
+prepod -- UC_Login
+prepod -- Choose_group
+Choose_group -- Choose_discipline
+Choose_discipline -- Choose_student
+Choose_student -- Change_marks
+Change_marks <.. Add_mark : <<extend>>
+
+admin --|> prepod
+admin -- UC_Login
+admin -- Check_student_list
+Check_student_list -- Add_student_to_list
+admin -- Check_prepod_list
+Check_prepod_list -- Choose_prepod
+Check_prepod_list -- Change_prepods
+Change_prepods ..> Add_prepod : <<include>>
+Change_prepods ..> Remove_prepod : <<include>>
+Choose_prepod -- Change_discipline
+Change_discipline ..> Remove_discipline : <<include>>
+Change_discipline ..> Add_discipline
+admin -- Change_groups
+Change_groups ..> Add_group : <<include>>
+Change_groups ..> Remove_group : <<include>>
+
+
+@enduml
