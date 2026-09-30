@@ -48,3 +48,6 @@ Student assessment accounting system
 
 PlantUML диаграмма:
 ![PlantUML](docs/img.png)
+Блок схемы основных процессов:
+![block-sch1](docs/img_1.png)
+![block-sch2](docs/img_2.png)
