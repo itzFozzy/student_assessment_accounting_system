@@ -47,4 +47,4 @@ Student assessment accounting system
 Проект будет реализован c помощью языка программирования Python 3.14, и будет представлять собой консольное приложение.
 
 PlantUML диаграмма:
-![PlantUML](docs/img.img)
+![PlantUML](docs/img.png)
