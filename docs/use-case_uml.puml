@@ -8,7 +8,9 @@ actor "Администратор" as admin
 
 
 package "Система" {
-    usecase "Вход в систему" as UC_Login
+    usecase "Вход в систему" as UC_studentLogin
+    usecase "Вход в систему" as UC_prepodLogin
+    usecase "Вход в систему" as UC_adminLogin
     usecase "Регистрация" as UC_Register
     usecase "Посмотреть список дисциплин" as Check_list_of_disciplines
     usecase "Посмотреть список группы" as Check_list_of_group
@@ -35,26 +37,26 @@ package "Система" {
     usecase "Удалить преподавателя" as Remove_prepod
 }
 
-student -- UC_Login
+student -- UC_studentLogin
 student -- UC_Register
-student -- Check_list_of_disciplines
-student -- Check_list_of_group
+UC_studentLogin -- Check_list_of_disciplines
+UC_studentLogin -- Check_list_of_group
 Check_list_of_disciplines -- Check_marks
 Check_marks ..> Check_prepod_name : <<include>>
 Check_marks ..> Check_avg_mark : <<include>>
 
-prepod -- UC_Login
-prepod -- Choose_group
+prepod -- UC_prepodLogin
+UC_prepodLogin -- Choose_group
 Choose_group -- Choose_discipline
 Choose_discipline -- Choose_student
 Choose_student -- Change_marks
 Change_marks <.. Add_mark : <<extend>>
 
 admin --|> prepod
-admin -- UC_Login
-admin -- Check_student_list
+admin -- UC_adminLogin
+UC_adminLogin -- Check_student_list
 Check_student_list -- Add_student_to_list
-admin -- Check_prepod_list
+UC_adminLogin -- Check_prepod_list
 Check_prepod_list -- Choose_prepod
 Check_prepod_list -- Change_prepods
 Change_prepods ..> Add_prepod : <<include>>
@@ -62,7 +64,7 @@ Change_prepods ..> Remove_prepod : <<include>>
 Choose_prepod -- Change_discipline
 Change_discipline ..> Remove_discipline : <<include>>
 Change_discipline ..> Add_discipline
-admin -- Change_groups
+UC_adminLogin -- Change_groups
 Change_groups ..> Add_group : <<include>>
 Change_groups ..> Remove_group : <<include>>
 
