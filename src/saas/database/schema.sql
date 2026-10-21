@@ -23,16 +23,14 @@ CREATE TABLE Users (
     userID INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
-    patronimik TEXT,
+    patronymik TEXT,
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     userRole INTEGER NOT NULL,
     group INTEGER NOT NULL,
-    discipline INTEGER NOT NULL,
 
     FOREIGN KEY (userRole) REFERENCES UserRole (userRoleID),
-    FOREIGN KEY (group) REFERENCES GroupList (groupID) ,
-    FOREIGN KEY (discipline) REFERENCES DisciplineList (disciplineID)
+    FOREIGN KEY (group) REFERENCES GroupList (groupID)
 );
 
 CREATE TABLE MarkList (
