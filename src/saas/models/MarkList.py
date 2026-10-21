@@ -6,7 +6,7 @@ class MarkList:
     mark: int
     avgmark: float
     studentID: int
-    DisciplineID: int
+    disciplineID: int
 
     student_name: str | None = None
     discipline_name: str | None = None
