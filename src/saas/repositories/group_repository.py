@@ -2,17 +2,16 @@ from src.saas.database.database import get_connection
 from src.saas.models.group import Group
 
 
-def create(groupID: int, name: str):
+def create(name: str):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO Group(
-            groupID,
             name
         )
-        VALUES(?,?)
-    """, (groupID, name))
+        VALUES(?)
+    """, name)
 
     conn.commit()
     conn.close()
@@ -41,7 +40,7 @@ def get_all() -> list[Group]:
     ]
 
 
-def get_by_id(role_id: int) -> Group | None:
+def get_by_id(groupID: int) -> Group | None:
     conn = get_connection()
     cur = conn.cursor()
 
@@ -61,6 +60,7 @@ def get_by_id(role_id: int) -> Group | None:
         groupID=row[0],
         name=row[1]
     )
+
 
 def delete(groupID: int):
     conn = get_connection()

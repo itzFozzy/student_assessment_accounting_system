@@ -23,7 +23,7 @@ CREATE TABLE Users (
     userID INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
-    p   atronymik TEXT,
+    patronymik TEXT,
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     userRole INTEGER NOT NULL,

@@ -9,4 +9,7 @@ class User:
     login: str
     password_hash: str
     userRole: int
+    group: int
+
+    group_name: str
     roleName: str | None = None

@@ -30,7 +30,7 @@ def register_student(
         patronymic: str | None,
         login: str,
         password: str
-):
+    ):
     if user_repository.get_by_login(login):
         raise Exception('User already registered')
 
