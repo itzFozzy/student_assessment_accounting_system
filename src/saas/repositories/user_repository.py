@@ -60,3 +60,4 @@ def get_all() -> list[User]:
     conn.close()
 
     return [_map(row) for row in rows]
+
