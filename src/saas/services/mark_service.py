@@ -16,7 +16,7 @@ def create_mark(mark: int, studentID: int, prepodID: int, disciplineID) -> None:
     if not discipline_repository.get_by_id(disciplineID):
         raise Exception('Discipline does not exist')
 
-    return mark_repository.create(mark, studentID, prepodID, disciplineID)
+    mark_repository.create(mark, studentID, prepodID, disciplineID)
 
 
 def get_all_marks(studentID: int, disciplineID: int):
