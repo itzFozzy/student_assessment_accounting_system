@@ -38,9 +38,11 @@ CREATE TABLE MarkList (
     mark INTEGER NOT NULL,
     avgmark FLOAT NOT NULL,
     studentID INTEGER NOT NULL,
+    prepodID INTEGER NOT NULL,
     disciplineID INTEGER NOT NULL,
 
-    FOREIGN KEY (studentID) REFERENCES Users (userID) ,
+    FOREIGN KEY (studentID) REFERENCES Users (userID),
+    FOREIGN KEY (prepodID) REFERENCES Users (userID) ,
     FOREIGN KEY (disciplineID) REFERENCES DisciplineList (disciplineID)
 );
 

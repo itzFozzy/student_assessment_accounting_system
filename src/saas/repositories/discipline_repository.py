@@ -2,17 +2,16 @@ from src.saas.database.database import get_connection
 from src.saas.models.disciplineList import DisciplineList
 
 
-def create(disciplineID: int, name: str):
+def create(name: str):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO disciplineList(
-            disciplineID,
             name
         )
-        VALUES(?,?)
-    """, (disciplineID, name))
+        VALUES(?)
+    """, name)
 
     conn.commit()
     conn.close()
@@ -61,3 +60,27 @@ def get_by_id(role_id: int) -> DisciplineList | None:
         disciplineID=row[0],
         name=row[1]
     )
+
+def assign_to_prepod(prepod_id: int, discipline_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO MarkList(prepodID, disciplineID)
+        VALUES(?, ?)
+    """, (prepod_id, discipline_id))
+
+    conn.commit()
+    conn.close()
+
+def assign_to_student(student_id: int, disciple_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO MarkList(student_id, disciplineID)
+        Values(?, ?)
+    """, (student_id, disciple_id))
+
+    conn.commit()
+    conn.close()

@@ -2,17 +2,16 @@ from src.saas.database.database import get_connection
 from src.saas.models.group import Group
 
 
-def create(groupID: int, name: str):
+def create(name: str):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO Group(
-            groupID,
             name
         )
-        VALUES(?,?)
-    """, (groupID, name))
+        VALUES(?)
+    """, name)
 
     conn.commit()
     conn.close()
