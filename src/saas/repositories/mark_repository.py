@@ -2,7 +2,7 @@ from src.saas.database.database import get_connection
 from src.saas.models.MarkList import MarkList
 
 
-def create(markID: int, name: str):
+def create(mark:int, studentID: int, prepodID: int, disciplineID: int) -> None:
     conn = get_connection()
     cur = conn.cursor()
 
@@ -10,12 +10,12 @@ def create(markID: int, name: str):
         INSERT INTO MarkList(
             markID,
             mark,
-            avgmark,
             studentID,
+            prepodID,
             disciplineID,
         )
-        VALUES(?,?,?,?,?)
-    """, (markID, name))
+        VALUES(?,?,?,?)
+    """, (mark, studentID, prepodID, disciplineID))
 
     conn.commit()
     conn.close()
@@ -25,7 +25,7 @@ def get_all() -> list[MarkList]:
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT markID, mark, avgmark, studentID, disciplineID
+        SELECT markID, mark, studentID, prepodID, disciplineID
         FROM MarkList
         ORDER BY markID
     """)
@@ -38,8 +38,8 @@ def get_all() -> list[MarkList]:
         MarkList(
             markID=row[0],
             mark=row[1],
-            avgmark=row[2],
-            studentID=row[3],
+            studentID=row[2],
+            prepodID=row[3],
             disciplineID=row[4],
         )
         for row in rows
@@ -50,7 +50,7 @@ def get_by_id(markID: int) -> MarkList | None:
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT markID, mark, avgmark, studentID, disciplineID
+        SELECT markID, mark, studentID, disciplineID
         FROM MarkList
         WHERE markID=?
     """, (markID,))
@@ -63,8 +63,8 @@ def get_by_id(markID: int) -> MarkList | None:
     return MarkList(
         markID=row[0],
         mark=row[1],
-        avgmark=row[2],
-        studentID=row[3],
+        studentID=row[2],
+        prepodID=row[3],
         disciplineID=row[4],
     )
 

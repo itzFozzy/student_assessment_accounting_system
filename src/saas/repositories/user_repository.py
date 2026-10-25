@@ -61,18 +61,3 @@ def get_all() -> list[User]:
 
     return [_map(row) for row in rows]
 
-def get_by_credentials(login: str, password_hash: str) -> User | None:
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT login, password_hash
-        FROM Users
-        ORDER BY login, password_hash
-        """)
-
-    row = cur.fetchone()
-    conn.close()
-
-    return _map(row) if row else None
-
