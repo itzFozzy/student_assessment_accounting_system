@@ -2,20 +2,18 @@ from src.saas.database.database import get_connection
 from src.saas.models.MarkList import MarkList
 
 
-def create(mark:int, studentID: int, prepodID: int, disciplineID: int) -> None:
+def create(mark:int, studentID: int, disciplineID: int) -> None:
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO MarkList(
-            markID,
             mark,
             studentID,
-            prepodID,
-            disciplineID,
+            disciplineID
         )
-        VALUES(?,?,?,?)
-    """, (mark, studentID, prepodID, disciplineID))
+        VALUES(?,?,?)
+    """, (mark, studentID, disciplineID))
 
     conn.commit()
     conn.close()
@@ -25,7 +23,7 @@ def get_all() -> list[MarkList]:
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT markID, mark, studentID, prepodID, disciplineID
+        SELECT markID, mark, studentID, disciplineID
         FROM MarkList
         ORDER BY markID
     """)
@@ -39,8 +37,7 @@ def get_all() -> list[MarkList]:
             markID=row[0],
             mark=row[1],
             studentID=row[2],
-            prepodID=row[3],
-            disciplineID=row[4],
+            disciplineID=row[3],
         )
         for row in rows
     ]
@@ -64,9 +61,21 @@ def get_by_id(markID: int) -> MarkList | None:
         markID=row[0],
         mark=row[1],
         studentID=row[2],
-        prepodID=row[3],
-        disciplineID=row[4],
+        disciplineID=row[3],
     )
+
+def update_mark(markID: int, new_mark:int) -> None:
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE MarkList
+        SET mark=?,
+        WHERE markID = ?
+    """, (new_mark, markID))
+
+    conn.commit()
+    conn.close()
 
 
 def delete(markID: int):
@@ -76,7 +85,7 @@ def delete(markID: int):
     cur.execute("""
         DELETE FROM MarkList
         WHERE markID=?
-    """, (markID,))
+    """, markID)
 
     conn.commit()
     conn.close()

@@ -2,7 +2,7 @@ from src.saas.repositories import mark_repository, user_repository, discipline_r
 from src.saas.models.MarkList import MarkList
 
 
-def create_mark(mark: int, studentID: int, prepodID: int, disciplineID) -> None:
+def create_mark(mark: int, studentID: int, disciplineID) -> None:
     if not mark:
         raise Exception('Mark cannot be empty')
     if mark > 5:
@@ -11,12 +11,10 @@ def create_mark(mark: int, studentID: int, prepodID: int, disciplineID) -> None:
         raise Exception('Mark cannot be less than 1')
     if not user_repository.get_by_id(studentID):
         raise Exception('Student does not exist')
-    if not user_repository.get_by_id(prepodID):
-        raise Exception('Prepod does not exist')
     if not discipline_repository.get_by_id(disciplineID):
         raise Exception('Discipline does not exist')
 
-    mark_repository.create(mark, studentID, prepodID, disciplineID)
+    mark_repository.create(mark, studentID, disciplineID)
 
 
 def get_all_marks(studentID: int, disciplineID: int):
@@ -26,11 +24,16 @@ def get_all_marks(studentID: int, disciplineID: int):
         raise Exception('Discipline does not exist')
     return mark_repository.get_all()
 
-def delete_mark(markID: int, studentID: int, prepodID: int, disciplineID: int):
+def delete_mark(markID: int):
     if not mark_repository.get_by_id(markID):
         raise Exception('Mark does not exist')
 
     mark_repository.delete(markID)
+
+def update_mark(markID: int, new_mark:int):
+    if not mark_repository.get_by_id(markID):
+        raise Exception('Mark does not exist')
+    mark_repository.update_mark(markID, new_mark)
 
 def get_average(studentID: int, disciplineID: int) -> float | int:
     marks = mark_repository.get_all()

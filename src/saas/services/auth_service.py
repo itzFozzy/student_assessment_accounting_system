@@ -1,11 +1,12 @@
 import hashlib
 
-from src.saas.models import user
+from src.saas.models import user, group
 from src.saas.repositories import user_repository
 from src.saas.models.user import User
 
 STUDENT_ROLE_ID = 1
 PREPOD_ROLE_ID = 2
+ADMIN_ROLE_ID = 3
 
 
 def hash_password(password: str):
@@ -40,7 +41,8 @@ def register_student(
         patronymic=patronymic,
         login=login,
         password_hash=hash_password(password),
-        user_role=STUDENT_ROLE_ID
+        user_role=STUDENT_ROLE_ID,
+        group = None
     )
 
 
@@ -60,7 +62,8 @@ def register_prepod(
         patronymic=patronymic,
         login=login,
         password_hash=hash_password(password),
-        user_role=PREPOD_ROLE_ID
+        user_role=PREPOD_ROLE_ID,
+        group = None
     )
 
 
@@ -74,5 +77,6 @@ def create_admin():
         patronymic=None,
         login="admin",
         password_hash=hash_password("123"),
-        user_role=PREPOD_ROLE_ID
+        user_role=ADMIN_ROLE_ID,
+        group = None
     )
