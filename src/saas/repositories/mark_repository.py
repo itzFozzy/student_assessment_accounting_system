@@ -2,7 +2,7 @@ from src.saas.database.database import get_connection
 from src.saas.models.MarkList import MarkList
 
 
-def create(mark:int, studentID: int, disciplineID: int) -> None:
+def create(mark:int, studentID: int, disciplineID: int, avgmark: float) -> None:
     conn = get_connection()
     cur = conn.cursor()
 
@@ -10,10 +10,11 @@ def create(mark:int, studentID: int, disciplineID: int) -> None:
         INSERT INTO MarkList(
             mark,
             studentID,
-            disciplineID
+            disciplineID,
+            avgmark
         )
-        VALUES(?,?,?)
-    """, (mark, studentID, disciplineID))
+        VALUES(?,?,?,?)
+    """, (mark, studentID, disciplineID, avgmark))
 
     conn.commit()
     conn.close()
@@ -85,7 +86,7 @@ def delete(markID: int):
     cur.execute("""
         DELETE FROM MarkList
         WHERE markID=?
-    """, markID)
+    """, (markID,))
 
     conn.commit()
     conn.close()

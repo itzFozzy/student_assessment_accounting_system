@@ -2,19 +2,22 @@ from src.saas.database.database import get_connection
 from src.saas.models.disciplineList import DisciplineList
 
 
-def create(name: str):
+def create(name: str) -> DisciplineList:
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO disciplineList(
-            name
-        )
+        INSERT INTO disciplineList(name)
         VALUES(?)
-    """, name)
+    """, (name,))
+
+    inserted_id = cur.lastrowid
 
     conn.commit()
     conn.close()
+
+    return DisciplineList(disciplineID=inserted_id, name=name)
+
 
 
 def get_all() -> list[DisciplineList]:
@@ -48,7 +51,7 @@ def get_by_id(role_id: int) -> DisciplineList | None:
         SELECT disciplineID, name
         FROM disciplineList
         WHERE disciplineID=?
-    """)
+    """, (role_id,))
 
     row = cur.fetchone()
     conn.close()
@@ -61,26 +64,29 @@ def get_by_id(role_id: int) -> DisciplineList | None:
         name=row[1]
     )
 
+
 def assign_to_prepod(prepod_id: int, discipline_id: int):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO MarkList(prepodID, disciplineID)
-        VALUES(?, ?)
-    """, (prepod_id, discipline_id))
+        INSERT INTO MarkList(mark, avgmark, studentID, prepodID, disciplineID)
+        VALUES(0, 0.0, ?, ?, ?)
+    """, (None, prepod_id, discipline_id))
 
     conn.commit()
     conn.close()
 
-def assign_to_student(student_id: int, disciple_id: int):
+
+def assign_to_student(discipline_id: int, student_id: int):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO MarkList(student_id, disciplineID)
-        Values(?, ?)
-    """, (student_id, disciple_id))
+        INSERT INTO MarkList(mark, avgmark, studentID, prepodID, disciplineID)
+        VALUES(0, 0.0, ?, ?, ?)
+    """, (student_id, None, discipline_id))
 
     conn.commit()
     conn.close()
+

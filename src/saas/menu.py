@@ -1,5 +1,5 @@
 from src.saas.auth import register_prepod
-from src.saas.repositories import mark_repository, discipline_repository, user_repository
+from src.saas.repositories import mark_repository, discipline_repository, user_repository, group_repository
 from src.saas.services import mark_service, group_service, discipline_service, auth_service
 from src.saas.services.auth_service import STUDENT_ROLE_ID
 
@@ -42,7 +42,7 @@ def prepod_menu(user):
         choice = input("Выберите действие: ")
 
         if choice == '1':
-            mark_update_menu()
+            mark_update_menu(user)
         if choice == '0':
             break
 
@@ -69,7 +69,7 @@ def student_menu(user):
                 print(f"\nОшибка {e}")
 
         if choice == '2':
-            discipline_menu(user.userID)
+            discipline_menu(user)
         if choice == '0':
             break
 
@@ -114,10 +114,13 @@ def discipline_menu(user):
         else:
             print("\nОшибка: Неверный ввод. Выберете номер из списка.")
 
+
 def mark_update_menu(user):
+    STUDENT_ROLE_ID = 1  # Убедитесь, что эта константа импортирована или объявлена
     while True:
         all_marks = mark_repository.get_all()
 
+        # Собираем уникальные ID дисциплин
         prepod_disciplines_ids = {m.disciplineID for m in all_marks}
         disciplines = []
         for d_id in prepod_disciplines_ids:
@@ -125,13 +128,14 @@ def mark_update_menu(user):
             if disc:
                 disciplines.append(disc)
 
-        print(f"\n---- Ваши дисциплиины ----")
+        print(f"\n---- Ваши дисциплины ----")
         if not disciplines:
             print("У вас пока нет дисциплин.")
             print("0. Назад")
             if input("Выберите действие: ") == "0":
                 break
             continue
+
         for idx, disc in enumerate(disciplines, 1):
             print(f"{idx}. {disc.name}")
         print("0. Назад")
@@ -145,7 +149,7 @@ def mark_update_menu(user):
 
             while True:
                 print(f"\n---- {selected_disc.name} ----")
-                print("1. Просмотреть список студентов и выствить оценку")
+                print("1. Просмотреть список студентов и выставить оценку")
                 print("0. Назад")
 
                 sub_choice = input("Выберите действие: ")
@@ -155,114 +159,130 @@ def mark_update_menu(user):
                     all_users = user_repository.get_all()
                     students = [u for u in all_users if u.userRole == STUDENT_ROLE_ID]
 
-                    print(f"\n---- Список всех студентов ----")
-                    if not students:
-                        print("В системе пока нет студентов.")
-                        input("\nНажмите Enter для возврата...")
-                        continue
+                    while True:  # Добавлен цикл для удержания экрана списка студентов
+                        print(f"\n---- Список всех студентов ----")
+                        if not students:
+                            print("В системе пока нет студентов.")
+                            input("\nНажмите Enter для возврата...")
+                            break
 
-                    for s_idx, std in enumerate(students, 1):
-                        avg = mark_service.get_average(std.userID, selected_disc.disciplineID)
-                        print(f"{s_idx}. {std.name} {std.patronymic} [Текущий ср. балл: {avg:.2f}]")
-                    print("0. Назад")
+                        for s_idx, std in enumerate(students, 1):
+                            avg = mark_service.get_average(std.userID, selected_disc.disciplineID)
+                            print(
+                                f"{s_idx}. {std.name} {std.patronymic if std.patronymic else ''} [Текущий ср. балл: {avg:.2f}]")
+                        print("0. Назад")
 
-                    student_choice = input("Выберите номер студента для изменения оценок: ")
-                    if student_choice == '0':
-                        break
+                        student_choice = input("Выберите номер студента для изменения оценок: ")
+                        if student_choice == '0':
+                            break
 
-                    if student_choice.isdigit() and 1 <= int(student_choice) <= len(students):
-                        target_student = students[int(student_choice) - 1]
+                        if student_choice.isdigit() and 1 <= int(student_choice) <= len(students):
+                            target_student = students[int(student_choice) - 1]
 
-                        while True:
-                            all_marks = mark_repository.get_all()
-                            current_marks = [
-                                m for m in all_marks
-                                if m.studentID == target_student.userID and m.disciplineID == selected_disc.disciplineID
-                            ]
+                            while True:  # Цикл управления оценками конкретного студента
+                                all_marks = mark_repository.get_all()
+                                current_marks = [
+                                    m for m in all_marks
+                                    if
+                                    m.studentID == target_student.userID and m.disciplineID == selected_disc.disciplineID
+                                ]
 
-                            print(f"\n---- Управление оценками студента: {target_student.surname} {target_student.name} {target_student.patronymic} ----")
-                            print(f"Дисциплина: {selected_disc.name}")
+                                print(
+                                    f"\n---- Управление оценками студента: {target_student.surname} {target_student.name} {target_student.patronymic if target_student.patronymic else ''} ----")
+                                print(f"Дисциплина: {selected_disc.name}")
 
-                            if not current_marks:
-                                print("У студента нет оценок по этому предмету.")
-                            else:
-                                print("Текуще оценки: ")
-                                for m_idx, m in enumerate(current_marks, 1):
-                                    print(f"{m_idx}. {m.mark}")
-                                    print("\nДоступные действия:")
-                                    print("1. Добавить оценку")
-                                    print("2. Изменить существующую оценку")
-                                    print("3. Удалить оценку")
-                                    print("0. Назад к выбору студента")
-
-                                    action = input("Выберите действие: ")
-
-                                    if action == '0':
-                                        break
-
-                                    #  --- ВЫСТАВЛЕНИЕ ОЦЕНКИ ---
-                                    elif action == '1':
-                                        score_input = input("Введите оценку (1-5): ")
-                                        if score_input.isdigit() and 1 <= int(score_input) <= 5:
-                                            mark_repository.create(
-                                                mark=int(score_input),
-                                                studentID=target_student.userID,
-                                                disciplineID=selected_disc.disciplineID
-                                            )
-                                            print("\nОценка выставлена!")
-                                        else:
-                                            print("Оценка должна быть числом от 1 до 5.")
-                                            input("\nНажмите Enter...")
-
-                                    #  --- ИЗМЕНЕНИЕ ОЦЕНКИ ---
-                                    elif action == '2':
-                                        if not current_marks:
-                                            print("Нет оценок для изменения.")
-                                            input("\nНажмите Enter...")
-                                            continue
-
-                                        m_choice = input("Выберите номер оценки для изменения: ")
-                                        if m_choice.isdigit() and 1 <= int(m_choice) <= len(current_marks):
-                                            selected_mark = current_marks[int(m_choice) - 1]
-
-                                            new_score = input(f"Введите новую оценку (1-5): ")
-                                            if new_score.isdigit() and 1 <= int(new_score) <= 5:
-                                                mark_service.update_mark(selected_mark.mark, int(new_score))
-                                                print("Оценка изменена!")
-                                            else:
-                                                print("Ошибка оценка должна быть числом от 1 до 5.")
-                                        else:
-                                            print("Ошибка неверный номер оценки.")
-                                        input("\nНажмите Enter...")
-
-                                    #  --- УДАЛЕНИЕ ОЦЕНКИ ---
-                                    elif action == '3':
-                                        if not current_marks:
-                                            print("Ошибка. Нет оценок для удаления.")
-                                            input("\nНажмите Enter...")
-                                            continue
-
-                                        m_choice = input("Выберите номер оценки для удаления: ")
-                                        if m_choice.isdigit() and 1 <= int(m_choice) <= len(current_marks):
-                                            selected_mark = current_marks[int(m_choice) - 1]
-                                            confirm = input(f"Вы уверены, что хотите удалить оценку? (y/n): ")
-                                            if confirm.lower() == 'y':
-                                                mark_service.delete_mark(selected_mark.markID)
-                                                print("\nОценка удалена!")
-                                            else:
-                                                print("Удаление отменено.")
-                                        else:
-                                            print("Ошибка. Неверный номер оценки.")
-                                        input("Нажмите Enter...")
-
-                                    else:
-                                        print("Ошибка. неверный выбор студента.")
+                                # 1. ВЫВОД ОЦЕНОК (Цикл занимается ТОЛЬКО выводом)
+                                if not current_marks:
+                                    print("У студента нет оценок по этому предмету.")
                                 else:
-                                    print("Ошибка. Неверный ввод. Выберите номер из списка.")
+                                    print("Текущие оценки: ")
+                                    for m_idx, m in enumerate(current_marks, 1):
+                                        print(f"{m_idx}. Оценка: {m.mark} (ID: {m.markID})")
 
+                                # 2. МЕНЮ ДЕЙСТВИЙ (Вынесено из цикла вывода оценок!)
+                                print("\nДоступные действия:")
+                                print("1. Добавить оценку")
+                                print("2. Изменить существующую оценку")
+                                print("3. Удалить оценку")
+                                print("0. Назад к выбору студента")
 
-from src.saas.repositories import user_repository, group_repository
-from src.saas.services import group_service, user_service
+                                action = input("Выберите действие: ")
+
+                                if action == '0':
+                                    break
+
+                                # --- ДОБАВЛЕНИЕ ОЦЕНКИ ---
+                                elif action == '1':
+                                    score_input = input("Введите оценку (1-5): ")
+                                    if score_input.isdigit() and 1 <= int(score_input) <= 5:
+                                        current_avg = mark_service.get_average(target_student.userID,
+                                                                               selected_disc.disciplineID)
+                                        mark_repository.create(
+                                            mark=int(score_input),
+                                            studentID=target_student.userID,
+                                            disciplineID=selected_disc.disciplineID,
+                                            avgmark=current_avg
+                                        )
+                                        print("\nОценка выставлена успешно!")
+                                    else:
+                                        print("Оценка должна быть числом от 1 до 5.")
+                                    input("\nНажмите Enter...")
+
+                                # --- ИЗМЕНЕНИЕ ОЦЕНКИ ---
+                                elif action == '2':
+                                    if not current_marks:
+                                        print("Нет оценок для изменения.")
+                                        input("\nНажмите Enter...")
+                                        continue
+
+                                    m_choice = input("Выберите номер оценки для изменения: ")
+                                    if m_choice.isdigit() and 1 <= int(m_choice) <= len(current_marks):
+                                        selected_mark = current_marks[int(m_choice) - 1]
+                                        new_score = input(f"Введите новую оценку (1-5): ")
+                                        if new_score.isdigit() and 1 <= int(new_score) <= 5:
+                                            # Заменяем на пересоздание через имеющийся репозиторий, раз нет метода update
+                                            mark_service.delete_mark(selected_mark.markID)
+                                            current_avg = mark_service.get_average(target_student.userID,
+                                                                                   selected_disc.disciplineID)
+                                            mark_repository.create(
+                                                mark=int(new_score),
+                                                studentID=target_student.userID,
+                                                disciplineID=selected_disc.disciplineID,
+                                                avgmark=current_avg
+                                            )
+                                            print("Оценка изменена!")
+                                        else:
+                                            print("Ошибка: оценка должна быть числом от 1 до 5.")
+                                    else:
+                                        print("Ошибка: неверный номер оценки.")
+                                    input("\nНажмите Enter...")
+
+                                # --- УДАЛЕНИЕ ОЦЕНКИ ---
+                                elif action == '3':
+                                    if not current_marks:
+                                        print("Ошибка. Нет оценок для удаления.")
+                                        input("\nНажмите Enter...")
+                                        continue
+
+                                    m_choice = input("Выберите номер оценки для удаления: ")
+                                    if m_choice.isdigit() and 1 <= int(m_choice) <= len(current_marks):
+                                        selected_mark = current_marks[int(m_choice) - 1]
+                                        confirm = input(f"Вы уверены, что хотите удалить оценку? (y/n): ")
+                                        if confirm.lower() == 'y':
+                                            mark_service.delete_mark(selected_mark.markID)
+                                            print("\nОценка удалена!")
+                                        else:
+                                            print("Удаление отменено.")
+                                    else:
+                                        print("Ошибка. Неверный номер оценки.")
+                                    input("\nНажмите Enter...")
+
+                                else:
+                                    print("Ошибка: неверный выбор действия.")
+                                    input("\nНажмите Enter...")
+                        else:
+                            print("Ошибка: неверный выбор студента.")
+                            input("\nНажмите Enter...")
 
 
 def _admin_add_student_to_group(selected_group):
@@ -295,11 +315,11 @@ def _admin_add_student_to_group(selected_group):
 
         try:
             user_service.change_user_group(target_student.userID, selected_group.groupID)
-            print(f"\n[Успешно] Студент {target_student.surname} переведен в группу {selected_group.name}!")
+            print(f"\nСтудент {target_student.surname} переведен в группу {selected_group.name}!")
         except Exception as e:
-            print(f"\n[Ошибка] {e}")
+            print(f"\nОшибка {e}")
     else:
-        print("[Ошибка] Неверный выбор.")
+        print("Ошибка Неверный выбор.")
 
 
 def _admin_group_management_menu():
@@ -344,7 +364,7 @@ def _admin_group_management_menu():
                 selected_group = groups[int(g_choice) - 1]
                 _admin_add_student_to_group(selected_group)
             else:
-                print("[Ошибка] Неверный номер группы.")
+                print("Ошибка Неверный номер группы.")
             input("\nНажмите Enter...")
 
         elif choice == '3':
@@ -376,7 +396,7 @@ def _admin_group_management_menu():
                 else:
                     print("Удаление отменено.")
             else:
-                print("[Ошибка] Неверный номер.")
+                print("Ошибка Неверный номер.")
             input("\nНажмите Enter...")
 
 
@@ -406,13 +426,11 @@ def _admin_assign_discipline_to_student(selected_disc):
                 disciplineID=selected_disc.disciplineID,
                 studentID=target_student.userID
             )
-            print(f"\n[Успешно] Дисциплина '{selected_disc.name}' успешно привязана студенту {target_student.surname}!")
-        except ValueError as e:
-            print(f"\n[Ошибка валидации] {e}")
+            print(f"\nДисциплина '{selected_disc.name}' успешно привязана студенту {target_student.surname}!")
         except Exception as e:
-            print(f"\n[Ошибка] {e}")
+            print(f"\nОшибка {e}")
     else:
-        print("[Ошибка] Неверный выбор.")
+        print("Ошибка Неверный выбор.")
 
 
 def _admin_assign_discipline_to_prepod(selected_disc):
@@ -511,7 +529,7 @@ def _admin_discipline_management_menu():
             if d_choice.isdigit() and 1 <= int(d_choice) <= len(disciplines):
                 _admin_assign_discipline_to_prepod(disciplines[int(d_choice) - 1])
             else:
-                print("[Ошибка] Неверный выбор.")
+                print("Ошибка Неверный выбор.")
             input("\nНажмите Enter...")
 
 
@@ -579,8 +597,8 @@ def _admin_register_user_menu():
 def admin_menu(user):
     while True:
         print(f"\n---- Панель Администратора ({user.login}) ----")
-        print("1. Создать учебную группу")
-        print("2. Создать новую дисциплину")
+        print("1. Управление группами")
+        print("2. Управление дисциплинами")
         print("3. Зарегистрировать пользователя (Студента / Преподавателя)")
         print("0. Выход")
 
@@ -604,4 +622,3 @@ def admin_menu(user):
 
         else:
             print("Неверный выбор действия. Попробуйте снова.")
-

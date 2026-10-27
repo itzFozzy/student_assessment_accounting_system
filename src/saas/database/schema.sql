@@ -27,18 +27,18 @@ CREATE TABLE Users (
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     userRole INTEGER NOT NULL,
-    group INTEGER NOT NULL,
+    [group] INTEGER,
 
     FOREIGN KEY (userRole) REFERENCES UserRole (userRoleID),
-    FOREIGN KEY (group) REFERENCES GroupList (groupID)
+    FOREIGN KEY ([group]) REFERENCES GroupList (groupID)
 );
 
 CREATE TABLE MarkList (
     markID INTEGER PRIMARY KEY AUTOINCREMENT,
     mark INTEGER NOT NULL,
     avgmark FLOAT NOT NULL,
-    studentID INTEGER NOT NULL,
-    prepodID INTEGER NOT NULL,
+    studentID INTEGER,
+    prepodID INTEGER,
     disciplineID INTEGER NOT NULL,
 
     FOREIGN KEY (studentID) REFERENCES Users (userID),
