@@ -27,6 +27,8 @@ from src.saas.services.group_service import (
     get_students_in_group
 )
 
+from src.saas.services import user_service
+
 # =================
 #       MENU
 # =================
@@ -40,7 +42,7 @@ def prepod_menu(user):
         choice = input("Выберите действие: ")
 
         if choice == '1':
-            disciplines_menu()
+            mark_update_menu()
         if choice == '0':
             break
 
@@ -112,7 +114,7 @@ def discipline_menu(user):
         else:
             print("\nОшибка: Неверный ввод. Выберете номер из списка.")
 
-def disciplines_menu(user):
+def mark_update_menu(user):
     while True:
         all_marks = mark_repository.get_all()
 
@@ -258,6 +260,322 @@ def disciplines_menu(user):
                                 else:
                                     print("Ошибка. Неверный ввод. Выберите номер из списка.")
 
+
+from src.saas.repositories import user_repository, group_repository
+from src.saas.services import group_service, user_service
+
+
+def _admin_add_student_to_group(selected_group):
+    all_users = user_repository.get_all()
+
+    available_students = [
+        u for u in all_users
+        if u.userRole == STUDENT_ROLE_ID and u.group != selected_group.groupID
+    ]
+
+    print(f"\n--- Добавление студентов в группу {selected_group.name} ---")
+    if not available_students:
+        print("В системе нет свободных студентов для добавления.")
+        return
+
+    for idx, std in enumerate(available_students, 1):
+        current_group_name = "Нет группы"
+        if std.group:
+            g = group_repository.get_by_id(std.group)
+            if g: current_group_name = g.name
+        print(f"{idx}. {std.surname} {std.name} (Текущая группа: {current_group_name})")
+    print("0. Назад")
+
+    std_choice = input("Выберите номер студента для добавления в группу: ")
+    if std_choice == '0':
+        return
+
+    if std_choice.isdigit() and 1 <= int(std_choice) <= len(available_students):
+        target_student = available_students[int(std_choice) - 1]
+
+        try:
+            user_service.change_user_group(target_student.userID, selected_group.groupID)
+            print(f"\n[Успешно] Студент {target_student.surname} переведен в группу {selected_group.name}!")
+        except Exception as e:
+            print(f"\n[Ошибка] {e}")
+    else:
+        print("[Ошибка] Неверный выбор.")
+
+
+def _admin_group_management_menu():
+    while True:
+        print("\n---- Управление группами ----")
+        print("1. Создать новую группу")
+        print("2. Посмотреть список групп / Добавить студента в группу")
+        print("3. Удалить группу")
+        print("0. Назад в главное меню")
+
+        choice = input("Выберите действие: ")
+
+        if choice == '0':
+            break
+
+        elif choice == '1':
+            group_name = input("Введите название новой группы (например, 26-ИВТ-2-2): ")
+            try:
+                new_group = group_service.create_group(name=group_name)
+                print(f"\nГруппа '{new_group.name}' создана с ID: {new_group.groupID}")
+            except ValueError as e:
+                print(f"\nОшибка {e}")
+            input("\nНажмите Enter...")
+
+        elif choice == '2':
+            groups = group_service.get_all_groups()
+            if not groups:
+                print("\nВ системе пока нет созданных групп.")
+                input("\nНажмите Enter...")
+                continue
+
+            print("\nСписок существующих групп:")
+            for idx, gr in enumerate(groups, 1):
+                print(f"{idx}. {gr.name} (ID: {gr.groupID})")
+            print("0. Назад")
+
+            g_choice = input("Выберите номер группы для управления её составом: ")
+            if g_choice == '0':
+                continue
+
+            if g_choice.isdigit() and 1 <= int(g_choice) <= len(groups):
+                selected_group = groups[int(g_choice) - 1]
+                _admin_add_student_to_group(selected_group)
+            else:
+                print("[Ошибка] Неверный номер группы.")
+            input("\nНажмите Enter...")
+
+        elif choice == '3':
+            groups = group_service.get_all_groups()
+            if not groups:
+                print("\nВ системе нет групп для удаления.")
+                input("\nНажмите Enter...")
+                continue
+
+            print("\nВыберите группу для УДАЛЕНИЯ:")
+            for idx, gr in enumerate(groups, 1):
+                print(f"{idx}. {gr.name}")
+            print("0. Назад")
+
+            g_choice = input("Введите номер группы для удаления: ")
+            if g_choice == '0':
+                continue
+
+            if g_choice.isdigit() and 1 <= int(g_choice) <= len(groups):
+                selected_group = groups[int(g_choice) - 1]
+                confirm = input(f"Вы уверены, что хотите БЕЗВОЗВРАТНО удалить группу {selected_group.name}? (y/n): ")
+
+                if confirm.lower() == 'y':
+                    try:
+                        group_service.delete_group(selected_group.groupID)
+                        print(f"\nГруппа {selected_group.name} была удалена.")
+                    except ValueError as e:
+                        print(f"\nОшибка {e}")
+                else:
+                    print("Удаление отменено.")
+            else:
+                print("[Ошибка] Неверный номер.")
+            input("\nНажмите Enter...")
+
+
+def _admin_assign_discipline_to_student(selected_disc):
+    all_users = user_repository.get_all()
+
+    students = [u for u in all_users if u.roleName == 'Student']
+
+    print(f"\n--- Привязка дисциплины '{selected_disc.name}' студенту ---")
+    if not students:
+        print("В системе пока нет зарегистрированных студентов.")
+        return
+
+    for idx, std in enumerate(students, 1):
+        print(f"{idx}. {std.surname} {std.name} {std.patronymic if std.patronymic else ''}")
+    print("0. Назад")
+
+    std_choice = input("Выберите номер студента для привязки предмета: ")
+    if std_choice == '0':
+        return
+
+    if std_choice.isdigit() and 1 <= int(std_choice) <= len(students):
+        target_student = students[int(std_choice) - 1]
+
+        try:
+            discipline_service.assign_discipline_with_student(
+                disciplineID=selected_disc.disciplineID,
+                studentID=target_student.userID
+            )
+            print(f"\n[Успешно] Дисциплина '{selected_disc.name}' успешно привязана студенту {target_student.surname}!")
+        except ValueError as e:
+            print(f"\n[Ошибка валидации] {e}")
+        except Exception as e:
+            print(f"\n[Ошибка] {e}")
+    else:
+        print("[Ошибка] Неверный выбор.")
+
+
+def _admin_assign_discipline_to_prepod(selected_disc):
+    all_users = user_repository.get_all()
+
+    prepods = [u for u in all_users if u.roleName == 'Prepod']
+
+    print(f"\n--- Назначение дисциплины '{selected_disc.name}' преподавателю ---")
+    if not prepods:
+        print("В системе пока нет зарегистрированных преподавателей.")
+        return
+
+    for idx, pr in enumerate(prepods, 1):
+        print(f"{idx}. {pr.surname} {pr.name}")
+    print("0. Назад")
+
+    pr_choice = input("Выберите номер преподавателя для закрепления предмета: ")
+    if pr_choice == '0':
+        return
+
+    if pr_choice.isdigit() and 1 <= int(pr_choice) <= len(prepods):
+        target_prepod = prepods[int(pr_choice) - 1]
+
+        try:
+            discipline_service.assign_discipline_with_prepod(
+                disciplineID=selected_disc.disciplineID,
+                prepodID=target_prepod.userID
+            )
+            print(
+                f"\nДисциплина '{selected_disc.name}' закреплена за преподавателем {target_prepod.surname}!")
+        except Exception as e:
+            print(f"\nОшибка {e}")
+    else:
+        print("Ошибка Неверный выбор.")
+
+def _admin_discipline_management_menu():
+    while True:
+        print("\n---- Управление дисциплинами ----")
+        print("1. Создать новую дисциплину")
+        print("2. Привязать дисциплину студенту")
+        print("3. Назначить дисциплину преподавателю")
+        print("0. Назад в главное меню")
+
+        choice = input("Выберите действие: ")
+
+        if choice == '0':
+            break
+
+        elif choice == '1':
+            disc_name = input("Введите название новой дисциплины: ")
+            try:
+                new_disc = discipline_service.create_discipline(name=disc_name)
+                print(f"\nДисциплина '{new_disc.name}' добавлена в систему.")
+            except ValueError as e:
+                print(f"\nОшибка {e}")
+            input("\nНажмите Enter...")
+
+        elif choice == '2':
+            disciplines = discipline_repository.get_all()
+            if not disciplines:
+                print("\nВ системе пока нет созданных дисциплин.")
+                input("\nНажмите Enter...")
+                continue
+
+            print("\nДоступные дисциплины:")
+            for idx, d in enumerate(disciplines, 1):
+                print(f"{idx}. {d.name}")
+            print("0. Назад")
+
+            d_choice = input("Выберите номер дисциплины: ")
+            if d_choice == '0':
+                continue
+
+            if d_choice.isdigit() and 1 <= int(d_choice) <= len(disciplines):
+                _admin_assign_discipline_to_student(disciplines[int(d_choice) - 1])
+            else:
+                print("Ошибка Неверный выбор.")
+            input("\nНажмите Enter...")
+
+        elif choice == '3':
+            disciplines = discipline_repository.get_all()
+            if not disciplines:
+                print("\nВ системе пока нет созданных дисциплин.")
+                input("\nНажмите Enter...")
+                continue
+
+            print("\nДоступные дисциплины:")
+            for idx, d in enumerate(disciplines, 1):
+                print(f"{idx}. {d.name}")
+            print("0. Назад")
+
+            d_choice = input("Выберите номер дисциплины: ")
+            if d_choice == '0':
+                continue
+
+            if d_choice.isdigit() and 1 <= int(d_choice) <= len(disciplines):
+                _admin_assign_discipline_to_prepod(disciplines[int(d_choice) - 1])
+            else:
+                print("[Ошибка] Неверный выбор.")
+            input("\nНажмите Enter...")
+
+
+def _admin_register_user_menu():
+    print("\nКого вы хотите зарегистрировать?")
+    print("1. Преподавателя")
+    print("2. Студента")
+    print("0. Назад")
+
+    role_choice = input("Выберите тип пользователя: ")
+    if role_choice == '0' or role_choice not in ['1', '2']:
+        if role_choice not in ['0', '1', '2']:
+            print("Ошибка Неверный выбор.")
+        return
+
+    surname = input("Введите фамилию: ")
+    name = input("Введите имя: ")
+    patronimik = input("Введите отчество (если нет, нажмите Enter): ")
+    patronimik = patronimik.strip() if patronimik.strip() else None
+    login = input("Введите логин для входа: ")
+    password = input("Введите пароль: ")
+
+    if role_choice == '1':
+        try:
+            user_service.register_user(
+                name=name, surname=surname, patronymic=patronimik,
+                login=login, password=password, is_prepod=True
+            )
+            print(f"\nПреподаватель {surname} зарегистрирован!")
+        except Exception as e:
+            print(f"\nОшибка {e}")
+
+    elif role_choice == '2':
+        groups = group_service.get_all_groups()
+        if not groups:
+            print("\nОшибка В системе нет ни одной группы! Сначала создайте группу.")
+            return
+
+        print("\nДоступные группы:")
+        for idx, gr in enumerate(groups, 1):
+            print(f"{idx}. {gr.name}")
+
+        g_choice = input("Выберите номер группы для студента: ")
+        if g_choice.isdigit() and 1 <= int(g_choice) <= len(groups):
+            selected_group = groups[int(g_choice) - 1]
+
+            try:
+                user_service.register_user(
+                    name=name, surname=surname, patronymic=patronimik,
+                    login=login, password=password, is_prepod=False
+                )
+
+                created_user = user_repository.get_by_login(login)
+                if created_user:
+                    user_service.change_user_group(created_user.userID, selected_group.groupID)
+                    print(f"\n Студент {surname} зарегистрирован и зачислен в группу {selected_group.name}!")
+                else:
+                    print("\nОшибка Не удалось привязать группу: пользователь не найден после регистрации.")
+            except Exception as e:
+                print(f"\nОшибка {e}")
+        else:
+            print("Ошибка Неверный выбор группы.")
+
+
 def admin_menu(user):
     while True:
         print(f"\n---- Панель Администратора ({user.login}) ----")
@@ -268,137 +586,22 @@ def admin_menu(user):
 
         choice = input("Выберите действие: ")
 
-        if choice == '0':
+        if choice == '1':
+            _admin_group_management_menu()
+            input("\nНажмите Enter...")
+
+        elif choice == '2':
+            _admin_discipline_management_menu()
+            input("\nНажмите Enter...")
+
+        elif choice == '3':
+            _admin_register_user_menu()
+            input("\nНажмите Enter...")
+
+        elif choice == '0':
             print("Выход из панели администратора.")
             break
 
-        # --- 1. СОЗДАНИЕ ГРУППЫ ---
-        elif choice == '1':
-            group_name = input("Введите название новой группы (например, ИВТ-24-1): ")
-            try:
-                # Используем вашу готовую функцию из group_service
-                new_group = group_service.create_group(name=group_name)
-                print(f"\n[Успешно] Группа '{new_group.name}' создана с ID: {new_group.groupID}")
-            except ValueError as e:
-                print(f"\n[Ошибка] {e}")
-            input("\nНажмите Enter...")
+        else:
+            print("Неверный выбор действия. Попробуйте снова.")
 
-        # --- 2. СОЗДАНИЕ ДИСЦИПЛИНЫ ---
-        elif choice == '2':
-            # На прошлых шагах мы выяснили, что disciplineID передается вручную или автоинкрементом.
-            # Если у вас автоинкремент, запрашиваем только имя. Если нет — запрашиваем и ID.
-            disc_name = input("Введите название новой дисциплины: ")
-            try:
-                # Вызываем сервис создания дисциплин
-                new_disc = discipline_service.create_discipline(name=disc_name)
-                print(f"\n[Успешно] Дисциплина '{new_disc.name}' добавлена в систему.")
-            except ValueError as e:
-                print(f"\n[Ошибка] {e}")
-            input("\nНажмите Enter...")
-
-        # --- 3. РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЕЙ ---
-        # --- 3. РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЕЙ ---
-        elif choice == '3':
-            print("\nКого вы хотите зарегистрировать?")
-            print("1. Преподавателя")
-            print("2. Студента")
-            print("0. Назад")
-
-            role_choice = input("Выберите тип пользователя: ")
-            if role_choice == '0':
-                continue
-
-            if role_choice not in ['1', '2']:
-                print("[Ошибка] Неверный выбор.")
-                input("\nНажмите Enter...")
-                continue
-
-            # Собираем данные, которые ваш сервис точно принимает
-            surname = input("Введите фамилию: ")
-            name = input("Введите имя: ")
-            patronimik = input("Введите отчество (если нет, нажмите Enter): ")
-            patronimik = patronimik.strip() if patronimik.strip() else None
-            login = input("Введите логин для входа: ")
-            password = input("Введите пароль: ")
-
-            # --- РЕГИСТРАЦИЯ ПРЕПОДАВАТЕЛЯ ---
-            if role_choice == '1':
-                try:
-                    # 1. Вызываем ваш сервис ТОЛЬКО с базовыми параметрами (без ролей и групп)
-                    user_service.register_user(
-                        name=name,
-                        surname=surname,
-                        patronymic=patronimik,
-                        login=login,
-                        password=password
-                    )
-
-                    # 2. Напрямую через SQL прописываем роль Преподавателя (1) и зануляем группу
-                    created_user = user_repository.get_by_login(login)
-                    if created_user:
-                        conn = get_connection()
-                        cur = conn.cursor()
-                        cur.execute("""
-                            UPDATE User
-                            SET userRole = 1, groupID = NULL
-                            WHERE userID = ?
-                        """, (created_user.userID,))
-                        conn.commit()
-                        conn.close()
-
-                    print(f"\n[Успешно] Преподаватель {surname} зарегистрирован!")
-                except Exception as e:
-                    print(f"\n[Ошибка] {e}")
-
-            # --- РЕГИСТРАЦИЯ СТУДЕНТА ---
-            elif role_choice == '2':
-                # Выбор группы
-                groups = group_service.get_all_groups()
-                if not groups:
-                    print("\n[Ошибка] В системе нет ни одной группы! Сначала создайте группу.")
-                    input("\nНажмите Enter...")
-                    continue
-
-                print("\nДоступные группы:")
-                for idx, gr in enumerate(groups, 1):
-                    print(f"{idx}. {gr.name}")
-
-                g_choice = input("Выберите номер группы для студента: ")
-
-                if g_choice.isdigit() and 1 <= int(g_choice) <= len(groups):
-                    selected_group = groups[int(g_choice) - 1]
-
-                    try:
-                        # 1. Вызываем ваш сервис ТОЛЬКО с базовыми параметрами (без ролей и групп)
-                        user_service.register_user(
-                            name=name,
-                            surname=surname,
-                            patronymic=patronimik,
-                            login=login,
-                            password=password
-                        )
-
-                        # 2. Напрямую через SQL прописываем роль Студента (2) и привязываем выбранную группу
-                        created_user = user_repository.get_by_login(login)
-                        if created_user:
-                            conn = get_connection()
-                            cur = conn.cursor()
-                            cur.execute("""
-                                UPDATE User
-                                SET userRole = 2, groupID = ?
-                                WHERE userID = ?
-                            """, (selected_group.groupID, created_user.userID))
-                            conn.commit()
-                            conn.close()
-
-                            print(
-                                f"\n[Успешно] Студент {surname} зарегистрирован и зачислен в группу {selected_group.name}!")
-                        else:
-                            print("\n[Ошибка] Не удалось привязать группу: пользователь не найден после регистрации.")
-
-                    except Exception as e:
-                        print(f"\n[Ошибка] {e}")
-                else:
-                    print("[Ошибка] Неверный выбор группы.")
-
-            input("\nНажмите Enter...")

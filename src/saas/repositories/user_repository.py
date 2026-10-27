@@ -61,3 +61,15 @@ def get_all() -> list[User]:
 
     return [_map(row) for row in rows]
 
+def update(user_id: int, user_role: int, group: int | None) -> None:
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE Users
+    SET user_role = ?, group = ?
+    WHERE userID = ?
+    """, (user_role, group, user_id))
+
+    conn.commit()
+    conn.close()
