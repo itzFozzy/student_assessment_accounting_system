@@ -116,7 +116,6 @@ def discipline_menu(user):
 
 
 def mark_update_menu(user):
-    STUDENT_ROLE_ID = 1  # Убедитесь, что эта константа импортирована или объявлена
     while True:
         all_marks = mark_repository.get_all()
 
@@ -191,7 +190,6 @@ def mark_update_menu(user):
                                     f"\n---- Управление оценками студента: {target_student.surname} {target_student.name} {target_student.patronymic if target_student.patronymic else ''} ----")
                                 print(f"Дисциплина: {selected_disc.name}")
 
-                                # 1. ВЫВОД ОЦЕНОК (Цикл занимается ТОЛЬКО выводом)
                                 if not current_marks:
                                     print("У студента нет оценок по этому предмету.")
                                 else:
@@ -199,7 +197,6 @@ def mark_update_menu(user):
                                     for m_idx, m in enumerate(current_marks, 1):
                                         print(f"{m_idx}. Оценка: {m.mark} (ID: {m.markID})")
 
-                                # 2. МЕНЮ ДЕЙСТВИЙ (Вынесено из цикла вывода оценок!)
                                 print("\nДоступные действия:")
                                 print("1. Добавить оценку")
                                 print("2. Изменить существующую оценку")
@@ -240,7 +237,6 @@ def mark_update_menu(user):
                                         selected_mark = current_marks[int(m_choice) - 1]
                                         new_score = input(f"Введите новую оценку (1-5): ")
                                         if new_score.isdigit() and 1 <= int(new_score) <= 5:
-                                            # Заменяем на пересоздание через имеющийся репозиторий, раз нет метода update
                                             mark_service.delete_mark(selected_mark.markID)
                                             current_avg = mark_service.get_average(target_student.userID,
                                                                                    selected_disc.disciplineID)
