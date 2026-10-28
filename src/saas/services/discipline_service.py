@@ -7,7 +7,8 @@ def create_discipline(name: str):
         raise ValueError("Discipline name cannot be empty")
 
     for d in discipline_repository.get_all():
-        raise ValueError("Discipline already exists")
+        if d.name == name:
+            raise ValueError("Discipline already exists")
 
     return discipline_repository.create(name)
 

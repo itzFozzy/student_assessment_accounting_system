@@ -169,7 +169,7 @@ def mark_update_menu(user):
                         for s_idx, std in enumerate(students, 1):
                             avg = mark_service.get_average(std.userID, selected_disc.disciplineID)
                             print(
-                                f"{s_idx}. {std.name} {std.patronymic if std.patronymic else ''} [Текущий ср. балл: {avg:.2f}]")
+                                f"{s_idx}. {std.surname} {std.name} {std.patronymic if std.patronymic else ''} [Текущий ср. балл: {avg:.2f}]")
                         print("0. Назад")
 
                         student_choice = input("Выберите номер студента для изменения оценок: ")
