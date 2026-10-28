@@ -119,7 +119,6 @@ def mark_update_menu(user):
     while True:
         all_marks = mark_repository.get_all()
 
-        # Собираем уникальные ID дисциплин
         prepod_disciplines_ids = {m.disciplineID for m in all_marks}
         disciplines = []
         for d_id in prepod_disciplines_ids:
@@ -158,7 +157,7 @@ def mark_update_menu(user):
                     all_users = user_repository.get_all()
                     students = [u for u in all_users if u.userRole == STUDENT_ROLE_ID]
 
-                    while True:  # Добавлен цикл для удержания экрана списка студентов
+                    while True:
                         print(f"\n---- Список всех студентов ----")
                         if not students:
                             print("В системе пока нет студентов.")
@@ -178,7 +177,7 @@ def mark_update_menu(user):
                         if student_choice.isdigit() and 1 <= int(student_choice) <= len(students):
                             target_student = students[int(student_choice) - 1]
 
-                            while True:  # Цикл управления оценками конкретного студента
+                            while True:
                                 all_marks = mark_repository.get_all()
                                 current_marks = [
                                     m for m in all_marks
