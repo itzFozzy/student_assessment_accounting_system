@@ -10,6 +10,7 @@ def get_connection():
 
 def init_db():
     if Path(DB_NAME).exists():
+
         return
     conn = get_connection()
 
